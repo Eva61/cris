@@ -1,0 +1,15 @@
+Clase 25/07/2018
+
+laravel new		Se coloca en la consola para crear un nuevo proyecto de laravel
+
+Como se respalda una base de datos?? 
+En phpmyadmin 
+
+Cada vez que se llame al modelo es en singular. 
+Cuando se encuentre el app se trata del modelo app/Product
+
+......................................
+
+Cuando llegue al comando route::resource('products','ProductController'); se debe colocar r en mayusculas
+
+Culmine el segundo power point, al llegar a casa, seguir desde el tercero.

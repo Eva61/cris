@@ -1,0 +1,249 @@
+Trasladar frontend con el backend
+
+1) Descargar la plantilla de boostrap, descomprimir la carpeta. 
+2) Se abre el index.html en sublime text de la plantilla de boostrap.
+3) Se borran casi todos los archivos de la carpeta public, excepto las carpetas js y css htaccess ni el robot de laravel no se deben borrar
+4) Se copian todos los archivos de la plantilla excepto el archivo index en la carpeta public
+5) Los archivos css y js de la plantilla deben incluirse en las carpetas que se encuentran en la carpeta public del proyecto laravel
+6) Se abre el index de la plantilla y se copia todo el codigo en el welcome.blade.php, sustituyendo el archivo anterior
+7) Se corre el proyecto 
+8) Se crea un archivo principal.blade.php dentro de la carpeta layouts, dentro de ese archivo voy a copiar la cabecera, el menu y lo que se encuentra despues del body
+y dentro de lo que es la cabecera y el footer se debe colocar @yield('content')
+9) Se crea un archivo jumbotron.blade.php dentro de la carpeta layouts y se copia el header del index de la plantilla
+10) Se crea un archivo que llamamos getstarted.blade.php, dentro de el se copia el getstarted
+11) Se crea un archivo que llamamos services.blade.php, dentro del archivo se copia el codigo de services
+12) Se crea un archivo que llamamos portafolio.blade.php, dentro del archivo se copia el codigo de portafolio
+13) Se crea un archivo que llamamos contact.blade.php y se coloca el codigo del contact
+14) Luego se borra todo el contenido de welcome.blade.php y se coloca 
+
+@extends('layouts.principal')
+	@section('content')
+
+	@include('layouts.jumbotron')
+	@include('layouts.getstarted')
+	@include('layouts.services')
+	@include('layouts.portafolio')
+	@include('layouts.contact')
+	
+	@endsection
+Se debe respetar el orden de las llamadas, ya que asi como se colocan asi sera respetado en la vista
+13) Se agrega en database/migrations/create_products_table.php este codigo debajo de body que permite agregar imagenes en la base de datos
+
+$table->string('file')->nullable()->default('sin-imagen.jpg');
+15) Se abre en database/factories/UserFactory.php y se coloca esta linea justo delante de la linea del name del factory de products
+
+'file' => $faker->imageUrl($width = 50, $height=100),
+
+Este comando crea automaticamente las imagenes 
+16) En la terminal se corre el siguiente comando $ php artisan migrate:refresh --seed
+para que genere las imagenes en la base de datos
+16) Verificar en localhost/phpmyadmin si las imagenes fueron creadas aleatoriamente. 
+17) como hago para agregar mis imagenes? Nos colocamos en config y abrimos el archivo filesystems.php justamente en la linea 53 se hace un cambio donde esta el root en 
+
+ 'public' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public'),     esta linea es modificada!
+            'url' => env('APP_URL').'/storage',
+            'visibility' => 'public',
+        ],
+  'public' => [
+            'driver' => 'local',
+            'root' => public_path(),
+            'url' => env('APP_URL').'/storage',
+            'visibility' => 'public',
+        ],
+18) view/products/form.blade.php se agrega al comienzo del documento: 
+
+<div class="form-group">
+    
+{{ Form::label('file', 'Imagen') }}
+    
+{{ Form::file('file') }}
+
+</div>
+
+19) app/http/controllers/ProductController.php y nos vamos a public function store(ProductRequest $request) y se agrega una linea:
+
+$product->save();
+
+        //IMAGE
+       if($request->file('file')){
+           $path = Storage::disk('public')->put('image', $request->file('file'));
+           $specialty->fill(['file' => asset($path)])->save();
+       }
+Tambien se agrega en public function update(ProductRequest $request, $id) justamente despues Product::find
+
+ $product = Product::find($id);
+
+        //IMAGE
+       if($request->file('file')){
+           $path = Storage::disk('public')->put('image', $request->file('file'));
+           $specialty->fill(['file' => asset($path)])->save();
+       }
+
+        $product ->name   =   $request->name;
+        $product ->short    =   $request->short;
+        $product ->body    =   $request->body;
+
+        $product->save();
+
+        return redirect()->route('products.index')->with('info', 'El producto fue actualizado');
+    }
+20) views/products/index.blade.php en la linea 24 se agrega despues del <td>{{ $product->id }}</td>
+
+<td><img src="{{ $product->file }}" alt=""></td>
+
+21)
+
+Crear otra crud en el proyecto
+
+1) Copiamos en la terminal php artisan make:model Carousel -m, crea la tabla en database/migration
+2) Copiamos en el archivo creado en migration create_products_carousel_table.php lo siguiente:
+
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class CreateCarouselsTable extends Migration
+{
+   /**
+    * Run the migrations.
+    *
+    * @return void
+    */
+   public function up()
+   {
+       Schema::create('carousels', function (Blueprint $table) {
+           $table->increments('id');
+
+           $table->string('title');
+           $table->mediumText('description');
+           $table->string('file')->nullable()->default('sin-imagen.jpg');
+
+           $table->timestamps();
+       });
+   }
+
+   /**
+    * Reverse the migrations.
+    *
+    * @return void
+    */
+   public function down()
+   {
+       Schema::dropIfExists('carousels');
+   }
+}
+3) Se ejecuta en la terminal php artisan migrate:refresh --seed. Con este comando nos crea la tabla en la base de datos que creamos en el proyecto.
+4) Se verifica la base de datos para ver si se creo la tabla con todos sus campos. 
+5) Se coloca en Http/Carousel.php escribimos los campos: 
+
+ class Carousel extends Model
+{
+    protected $fillable = [
+        'title', 'description', 'file',
+    ];
+}
+6) Ejecutamos en consola php artisan make:controller CarouselController --resource, crea el CarouselController dentro de la carpeta Controller.
+
+7) Routes/web.php y se agrega la ruta al final, crea la ruta del carousel 
+route::resource('carousels','CarouselController');
+
+8) Ejecutamos en la terminal php artisan route:list para verificar si realmente se crearon las rutas del carousel.
+
+9) Descargamos la plantilla y descomprimimos el archivo y copiamos todos los archivos excepto el index.php
+10) Copiamos el index.php en el welcome.blade.php
+11) Ingresamos en el Controllers/CarouselController.php y agregamos en 
+ public function index()
+    {
+        $carousels= Carousel::orderBy('id','ASC')->paginate(5);
+        return view('carousels.index', compact('carousels'));
+    }
+12) Agregamos todos los campos del ProductController.php en el archivo CarouselController.php sustituyendo todos los products product por carousel, teniendo en cuenta las mayusculas plurales y singulares.
+13) Creamos el CarouselRequest que va en la carpeta Request por medio de la ejecucion del comando en la terminal php artisan make:request CarouselRequest, agregamos el siguiente codigo: 
+
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class CarouselRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     *
+     * @return bool
+     */
+    public function authorize()
+    {
+        return true;
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array
+     */
+    public function rules()
+    {
+        return [
+            'title'         =>  'required', 
+            'description'   =>  'required',
+            'file'          => 'mimes:jpg,jpeg,png,gif'
+        ];
+    }
+}
+
+14) Creamos un folder dentro de view titulada carousels, creo la carpeta que me da la ruta. y dentro de ella se crea una folder llamado fragment
+15) Dentro de la folder fragment se crean los archivos aside, error, form e info.
+16) Para sincronizar el frontend con el backend se debe crear un FrontendController que va en la carpeta controller, para ello escribimos en la consola php artisan make:controller FrontendController --resource. Escribimos en el codigo lo siguiente:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use\App\Product;
+use\App\Carousel;
+
+class FrontendController extends Controller
+{
+    public function index(){
+           //Paginate(4) me dice cuantos registros voy a mostrar en la página
+           //OrdenBy me da en que order voy a mostrar los registros asd or desc
+
+            $products = Product::orderBy('id', 'asc')->paginate(4);
+            $carousels = Carousel::orderBy('id', 'asc')->paginate(5);
+
+           //Coloco las tablas que voy a mostrar en el welcome
+           //$products2 = Product::orderBy('id', 'desc')->paginate(3);
+           //$products3 = Product::orderBy('id', 'desc')->paginate(3);
+
+           //Si temgo varias paginas debo hacer un metodo para cada uno de ellas
+            return view('welcome', compact('products','carousels'));
+        }
+}
+
+17) Luego, debemos modificar la routes (ruta) del carousel. Abrimos el archivo routes/webphp y agregamos lo siguiente: 
+
+Comentamos este codigo: 
+/*
+Route::get('/', function () {
+    return view('welcome');
+});*/
+
+Y justamente debajo agregamos: 
+
+Route::get('/', 'FrontendController@index');
+
+Auth::routes();
+
+Route::get('/home', 'HomeController@index')->name('home');
+route::resource('products','ProductController');
+route::resource('carousels','CarouselController');
+
+Alli lo tienes, podras sincronizar las imagenes con el backend.
+
